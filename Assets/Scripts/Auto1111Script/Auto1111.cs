@@ -29,6 +29,22 @@ public class Auto1111 : MonoBehaviour
         if (result) ApplyResult(result);
     }
     
+    // Takes voice prompt
+    public async System.Threading.Tasks.Task ProcessWithVoicePrompt(string voicePrompt)
+    {
+        if (!input) { Debug.LogError("No input texture!"); return; }
+        
+        string originalPrompt = prompt;
+        prompt = voicePrompt;
+        
+        Debug.Log($"Processing with prompt: {voicePrompt}");
+        
+        var result = mask ? await Inpaint() : await StyleTransfer();
+        if (result) ApplyResult(result);
+        
+        prompt = originalPrompt;
+    }
+    
     async System.Threading.Tasks.Task<Texture2D> StyleTransfer()
     {
         var data = new {
@@ -93,7 +109,7 @@ public class Auto1111 : MonoBehaviour
         }
         
         SaveTexture(tex);
-        Debug.Log("Re-texture is Done!");
+        Debug.Log("Done!");
     }
     
     void SaveTexture(Texture2D tex)
