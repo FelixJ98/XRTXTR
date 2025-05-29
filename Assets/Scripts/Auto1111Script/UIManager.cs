@@ -11,22 +11,18 @@ public class UIManager : MonoBehaviour
     public TextMeshProUGUI objectDisplay;
     public Button retextureButton;
     public Button recordButton;
-    
+   
     [Header("Dictation")]
     public DictationService dictationService; // Drag your App Dictation Experience here
-    
+   
     [Header("Manager")]
     public RetextManager retextureManager;
-    
+   
     private bool isRecording = false;
-    
+   
     void Start()
     {
-        // Setup button listeners
-        retextureButton.onClick.AddListener(() => retextureManager.ProcessCurrentObject());
-        recordButton.onClick.AddListener(ToggleRecording);
-        
-        // Setup dictation callbacks
+        // Setup dictation callbacks only (no button listeners)
         if (dictationService != null)
         {
             dictationService.DictationEvents.OnFullTranscription.AddListener(OnTranscription);
@@ -34,7 +30,7 @@ public class UIManager : MonoBehaviour
             dictationService.DictationEvents.OnStoppedListening.AddListener(() => isRecording = false);
         }
     }
-    
+   
     void Update()
     {
         // Update UI displays
@@ -42,19 +38,27 @@ public class UIManager : MonoBehaviour
         {
             string objName = retextureManager.GetCurrentObjectName();
             objectDisplay.text = $"Object: {objName}";
-            
+           
             // Enable/disable retexture button based on grabbed object
             retextureButton.interactable = (objName != "None");
         }
-        
+       
         // Update record button text
         if (recordButton != null)
         {
             recordButton.GetComponentInChildren<TextMeshProUGUI>().text = isRecording ? "Stop Recording" : "Record";
         }
     }
+   
+    // PUBLIC METHODS FOR OnClick EVENTS
     
-    void ToggleRecording()
+    public void OnRetextureButtonClick()
+    {
+        retextureManager.ProcessCurrentObject();
+        Debug.Log("Retexture button clicked");
+    }
+    
+    public void OnRecordButtonClick()
     {
         if (!isRecording)
         {
@@ -67,10 +71,11 @@ public class UIManager : MonoBehaviour
             Debug.Log("Stopped recording...");
         }
     }
-    
+   
     void OnTranscription(string transcription)
     {
         retextureManager.UpdatePrompt(transcription);
         Debug.Log($"Voice prompt received: {transcription}");
     }
+
 }

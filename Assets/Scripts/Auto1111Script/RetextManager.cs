@@ -119,6 +119,6 @@ public class RetextManager : MonoBehaviour
     // Get current grabbed object name for UI display
     public string GetCurrentObjectName()
     {
-        return currentGrabbedObject ? currentGrabbedObject.name : "None";
+        return currentGrabbedObject ? currentGrabbedObject.transform.parent.name : "None";
     }
 }
