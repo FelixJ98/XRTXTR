@@ -29,7 +29,7 @@ public class Auto1111 : MonoBehaviour
         if (result) ApplyResult(result);
     }
     
-    // Takes voice prompt
+    // NEW METHOD: Process with custom voice prompt
     public async System.Threading.Tasks.Task ProcessWithVoicePrompt(string voicePrompt)
     {
         if (!input) { Debug.LogError("No input texture!"); return; }
