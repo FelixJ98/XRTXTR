@@ -13,10 +13,11 @@ public class RetextManager : MonoBehaviour
     public HandGrabInteractor rightHandGrabber;
     
     [Header("Retexture Settings")]
-    public string serverIP = "localhost";
+    public string serverIP = "LocalHost";
     public float strength = 0.55f;
     public int steps = 30;
-    
+    public int cfgScale = 13;
+
     private Auto1111 retextureScript;
     private GameObject currentGrabbedObject;
     
@@ -27,6 +28,7 @@ public class RetextManager : MonoBehaviour
         retextureScript.serverIP = serverIP;
         retextureScript.strength = strength;
         retextureScript.steps = steps;
+        retextureScript.cfgScale = cfgScale;
         
         // Update UI
         UpdatePromptDisplay();
@@ -51,54 +53,84 @@ public class RetextManager : MonoBehaviour
     }
     
     // Call this from your UI button
-    public async void ProcessCurrentObject()
+public async void ProcessCurrentObject()
+{
+    if (currentGrabbedObject == null)
     {
-        if (currentGrabbedObject == null)
-        {
-            Debug.LogWarning("No object grabbed! Grab an object first.");
-            return;
-        }
-        
-        // Get the renderer from grabbed object
-        Renderer renderer = currentGrabbedObject.GetComponent<Renderer>();
-        if (renderer == null)
-        {
-            Debug.LogError("Grabbed object has no Renderer component!");
-            return;
-        }
-        
-        // Get current texture - check TextureProvider first, then fallback to material
-        Texture2D currentTexture = null;
-        
-        TextureProvider textureProvider = currentGrabbedObject.GetComponent<TextureProvider>();
-        if (textureProvider != null && textureProvider.GetTexture() != null)
-        {
-            currentTexture = textureProvider.GetTexture();
-            Debug.Log($"Using TextureProvider texture: {currentTexture.name}");
-        }
-        else
-        {
-            currentTexture = renderer.material.mainTexture as Texture2D;
-            Debug.Log("Using material texture");
-        }
-        
-        if (currentTexture == null)
-        {
-            Debug.LogError("No valid texture found!");
-            return;
-        }
-        
-        // Setup the retexture script with current object data
-        retextureScript.input = currentTexture;
-        retextureScript.target = currentGrabbedObject;
-        retextureScript.prompt = currentPrompt;
-        
-        string mode = retextureScript.mask ? "inpainting" : "style transfer";
-        Debug.Log($"Retexturing {currentGrabbedObject.name} using {mode} with prompt: {currentPrompt}");
-        
-        // Process the texture
-        await retextureScript.ProcessWithVoicePrompt(currentPrompt);
+        Debug.LogWarning("No object grabbed! Grab an object first.");
+        return;
     }
+    
+    // Search for the first MeshRenderer starting from the grabbed object
+    MeshRenderer meshRenderer = null;
+    GameObject targetObject = null;
+    
+    // First check the grabbed object itself
+    meshRenderer = currentGrabbedObject.GetComponent<MeshRenderer>();
+    if (meshRenderer != null)
+    {
+        targetObject = currentGrabbedObject;
+    }
+    
+    // If not found, search in children
+    if (meshRenderer == null)
+    {
+        meshRenderer = currentGrabbedObject.GetComponentInChildren<MeshRenderer>();
+        if (meshRenderer != null)
+        {
+            targetObject = meshRenderer.gameObject;
+        }
+    }
+    
+    // If still not found, search up the hierarchy
+    if (meshRenderer == null)
+    {
+        Transform current = currentGrabbedObject.transform.parent;
+        while (current != null && meshRenderer == null)
+        {
+            meshRenderer = current.GetComponent<MeshRenderer>();
+            if (meshRenderer != null)
+            {
+                targetObject = current.gameObject;
+                break;
+            }
+            current = current.parent;
+        }
+    }
+    
+    if (meshRenderer == null)
+    {
+        Debug.LogError("No MeshRenderer found!");
+        return;
+    }
+    
+    // Get current texture - check TextureProvider first, then fallback to material
+    Texture2D currentTexture = null;
+    
+    TextureProvider textureProvider = targetObject.GetComponent<TextureProvider>();
+    if (textureProvider != null && textureProvider.GetTexture() != null)
+    {
+        currentTexture = textureProvider.GetTexture();
+    }
+    else
+    {
+        currentTexture = meshRenderer.material.mainTexture as Texture2D;
+    }
+    
+    if (currentTexture == null)
+    {
+        Debug.LogError("No valid texture found!");
+        return;
+    }
+    
+    // Setup the retexture script
+    retextureScript.input = currentTexture;
+    retextureScript.target = targetObject;
+    retextureScript.prompt = currentPrompt;
+    
+    // Process the texture
+    await retextureScript.ProcessWithVoicePrompt(currentPrompt);
+}
     
     // Call this when dictation updates the prompt
     public void UpdatePrompt(string newPrompt)

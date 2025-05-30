@@ -7,9 +7,10 @@ using System.Threading.Tasks;
 public class Auto1111 : MonoBehaviour
 {
     [Header("Settings")]
-    public string serverIP = "localhost";
+    public string serverIP = "LocalHost";
     public float strength = 0.55f;
     public int steps = 30;
+    public int cfgScale = 7;
     public string prompt = "dark steel texture, black metal, gunmetal finish";
     
     [Header("Textures")]
@@ -28,7 +29,6 @@ public class Auto1111 : MonoBehaviour
         if (result) ApplyResult(result);
     }
     
-    // XR-optimized method with progress feedback
     public async Task ProcessWithVoicePrompt(string voicePrompt)
     {
         if (!input) { Debug.LogError("No input texture!"); return; }
@@ -44,7 +44,7 @@ public class Auto1111 : MonoBehaviour
             if (result) 
             {
                 ApplyResult(result);
-                Debug.Log("AI processing completed successfully!");
+                Debug.Log("AI completed!");
             }
             else
             {
@@ -57,43 +57,42 @@ public class Auto1111 : MonoBehaviour
         }
         finally
         {
-            prompt = originalPrompt; // Always restore original prompt
+            prompt = originalPrompt;
         }
     }
     
     async Task<Texture2D> StyleTransfer()
     {
-        var data = new {
-            init_images = new[] { ToBase64(input) },
-            prompt = $"{prompt}, preserve details, high quality",
-            negative_prompt = "blurry, low quality, distorted",
-            denoising_strength = strength,
-            steps = steps,
-            width = input.width,
-            height = input.height
-        };
+        var data = new StyleTransferRequest();
+        data.init_images = new[] { ToBase64(input) };
+        data.prompt = $"{prompt}, preserve details, high quality";
+        data.negative_prompt = "blurry, low quality, distorted";
+        data.denoising_strength = strength;
+        data.cfg_scale = cfgScale;
+        data.steps = steps;
+        data.width = input.width;
+        data.height = input.height;
         
         return await SendRequest(data);
     }
     
     async Task<Texture2D> Inpaint()
     {
-        var data = new {
-            init_images = new[] { ToBase64(input) },
-            mask = ToBase64(mask),
-            prompt = $"{prompt}, seamless, match lighting",
-            negative_prompt = "visible seams, harsh edges",
-            denoising_strength = strength,
-            steps = steps,
-            width = input.width,
-            height = input.height,
-            inpaint_full_res = true
-        };
+        var data = new InpaintRequest();
+        data.init_images = new[] { ToBase64(input) };
+        data.mask = ToBase64(mask);
+        data.prompt = $"{prompt}, seamless, match lighting";
+        data.negative_prompt = "visible seams, harsh edges";
+        data.denoising_strength = strength;
+        data.cfg_scale = cfgScale;
+        data.steps = steps;
+        data.width = input.width;
+        data.height = input.height;
+        data.inpaint_full_res = true;
         
         return await SendRequest(data);
     }
     
-    // Improved async method with better Unity integration
     async Task<Texture2D> SendRequest(object data)
     {
         try
@@ -108,12 +107,10 @@ public class Auto1111 : MonoBehaviour
                 www.downloadHandler = new DownloadHandlerBuffer();
                 www.SetRequestHeader("Content-Type", "application/json");
                 
-                // Non-blocking async operation that yields to Unity's main thread
                 var operation = www.SendWebRequest();
                 
                 while (!operation.isDone)
                 {
-                    // Yield control back to Unity's main thread each frame
                     await Task.Yield();
                 }
                 
@@ -146,7 +143,6 @@ public class Auto1111 : MonoBehaviour
     {
         if (target?.GetComponent<Renderer>() is Renderer r)
         {
-            // Create new material instance to avoid affecting other objects
             var newMaterial = new Material(r.material);
             newMaterial.mainTexture = tex;
             r.material = newMaterial;
@@ -246,5 +242,38 @@ public class Auto1111 : MonoBehaviour
         }
     }
     
-    [Serializable] class Response { public string[] images; }
+    // Proper classes instead of anonymous objects
+    [Serializable]
+    public class StyleTransferRequest
+    {
+        public string[] init_images;
+        public string prompt;
+        public string negative_prompt;
+        public float denoising_strength;
+        public int cfg_scale;
+        public int steps;
+        public int width;
+        public int height;
+    }
+    
+    [Serializable]
+    public class InpaintRequest
+    {
+        public string[] init_images;
+        public string mask;
+        public string prompt;
+        public string negative_prompt;
+        public float denoising_strength;
+        public int cfg_scale;
+        public int steps;
+        public int width;
+        public int height;
+        public bool inpaint_full_res;
+    }
+    
+    [Serializable] 
+    public class Response 
+    { 
+        public string[] images; 
+    }
 }
