@@ -20991,7 +20991,7 @@ MonoBehaviour:
   currentPrompt: dark steel texture, black metal, gunmetal finish
   leftHandGrabber: {fileID: 1261955539}
   rightHandGrabber: {fileID: 1775501169}
-  serverIP: 10.0.0.5
+  serverIP: LocalHost
   strength: 0.45
   steps: 50
   cfgScale: 13
@@ -26774,10 +26774,10 @@ SceneRoots:
   - {fileID: 1671468876}
   - {fileID: 637782870099064214}
   - {fileID: 339382925967916879}
+  - {fileID: 3247918159443802112}
   - {fileID: 1398575126}
   - {fileID: 961803883}
   - {fileID: 827777950}
   - {fileID: 1669074815}
   - {fileID: 942868030}
   - {fileID: 1830768183}
-  - {fileID: 3247918159443802112}
